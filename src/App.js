@@ -222,7 +222,7 @@ function App() {
           рудников.
         </h1>
       </div>
-      <div>
+      <div className="Button_">
         <label htmlFor="file-upload" className="Button">
           Загрузить файл
         </label>

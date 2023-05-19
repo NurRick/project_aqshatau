@@ -147,7 +147,10 @@ html {
   border: none;
   border-radius: 100px;
   padding: 20px;
-  margin: 50px;
+  margin: 50px 50px 50px 50px;
+}
+.Button_ label:hover{
+  transform: scale(1.5);
 }
 
 

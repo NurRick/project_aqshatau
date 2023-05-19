@@ -2,6 +2,34 @@ import React, { useState } from "react";
 import "./App.css";
 import * as XLSX from "xlsx";
 
+function Popup() {
+  const [showPopup, setShowPopup] = useState(true);
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+  };
+
+  return (
+    <div className="popupOverlay">
+      {showPopup && (
+        <div className="popup-overlay">
+          <div className="popup">
+            <h2>Добро пожаловать на Aqsha Tau!</h2>
+            <p>
+              Добро пожаловать в наше приложение, которое поможет вам создать
+              финансово-экономическую модель для рудников на основе ваших данных
+              из Excel-файлов. Мы рады приветствовать вас на нашем сайте!.
+            </p>
+            <button className="continue-btn" onClick={handleClosePopup}>
+              Продолжить
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CalculationPage({ result }) {
   if (!Array.isArray(result)) {
     return null; // Return null if the result is not an array
@@ -71,7 +99,7 @@ function CalculationPage({ result }) {
 
   return (
     <div>
-      <h2>Calculation Result:</h2>
+      <h2 className="ResulHead">Сводные технико-экономические показатели:</h2>
       {result.length > 0 ? (
         <div>
           <table>
@@ -88,15 +116,17 @@ function CalculationPage({ result }) {
                   <td>{row.number}</td>
                   <td>{rowNames[index]}</td>
                   <td>{Unit[index]}</td>
-                  <td>{row.multiplication}</td>
-                  <td>{row.multiplication}</td>
-                  <td>{row.multiplication}</td>
-                  <td>{row.division}</td>
+                  <td>{row.multiplication.toFixed(2)}</td>
+                  <td>{row.multiplication.toFixed(2)}</td>
+                  <td>{row.multiplication.toFixed(2)}</td>
+                  <td>{row.division.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <button onClick={exportToExcel}>Download Excel</button>
+          <button className="Button" onClick={exportToExcel}>
+            Скачать результат
+          </button>
         </div>
       ) : (
         <p>No calculations to display.</p>
@@ -111,6 +141,16 @@ function App() {
   const [sheetNames, setSheetNames] = useState([]);
   const [result, setResult] = useState(0);
   const [selectedTab, setSelectedTab] = useState(0);
+  const [showWelcomePopup, setShowWelcomePopup] = useState(true);
+  const [fileUploaded, setFileUploaded] = useState(false);
+
+  useState(() => {
+    const timer = setTimeout(() => {
+      setShowWelcomePopup(false);
+    }, 20000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const readExcel = (file) => {
     const promise = new Promise((resolve, reject) => {
@@ -128,6 +168,7 @@ function App() {
 
         setSheetNames(wsNames);
         setItems(sheets);
+        setFileUploaded(true); // Set fileUploaded to true after successful file upload
       };
 
       fileReader.onerror = (error) => {
@@ -146,13 +187,13 @@ function App() {
   };
 
   const handleCalculation = () => {
-    const numRows = Math.min(items[0]?.length || 0, items[1]?.length || 0); 
+    const numRows = Math.min(items[0]?.length || 0, items[1]?.length || 0);
 
     const calculationResult = [];
 
     for (let i = 0; i < numRows; i++) {
       const firstTabValue = items[0]?.[1]?.г2023;
-      const secondTabValue = items[1]?.[1]?.г2023;
+      const secondTabValue = items[0]?.[1]?.г2024;
 
       if (firstTabValue !== undefined && secondTabValue !== undefined) {
         const rowResult = {
@@ -173,56 +214,73 @@ function App() {
     setActiveSheet(2);
   };
   return (
-    <div>
-      <input
-        type="file"
-        onChange={(e) => {
-          const file = e.target.files[0];
-          readExcel(file);
-        }}
-      />
-      {sheetNames.map((name, index) => (
-        <button
-          key={name}
-          onClick={() => handleSheetButtonClick(index)}
-          className={index === selectedTab ? "active" : ""}
-        >
-          {name}
-        </button>
-      ))}
-      <table className="table container">
-        <thead>
-          <tr>
-            {items[activeSheet] &&
-              items[activeSheet].length > 0 && // Check if items[activeSheet] is defined
-              Object.keys(items[activeSheet][0]).map((key, index) => (
-                <th key={index} scope="col">
-                  {key}
-                </th>
-              ))}
-          </tr>
-        </thead>
-        <tbody>
-          {items[activeSheet]?.map((d, index) => (
-            <tr key={index}>
-              {Object.keys(items[activeSheet][0]).map((key, index) => {
-                const cellValue = d[key] !== undefined ? d[key] : "";
-                return (
-                  <td key={index}>
-                    {typeof cellValue === "number"
-                      ? Number.isInteger(cellValue)
-                        ? cellValue
-                        : cellValue.toFixed(2)
-                      : cellValue}
-                  </td>
-                );
-              })}
+    <div className="App">
+      {showWelcomePopup && <Popup />}
+      <div>
+        <h1>
+          "AqshaTau" - ваше решение для финансово-экономического моделирования
+          рудников.
+        </h1>
+      </div>
+      <div>
+        <label htmlFor="file-upload" className="Button">
+          Загрузить файл
+        </label>
+        <input
+          type="file"
+          id="file-upload"
+          onChange={(e) => {
+            const file = e.target.files[0];
+            readExcel(file);
+          }}
+        />
+        {sheetNames.map((name, index) => (
+          <button
+            key={name}
+            onClick={() => handleSheetButtonClick(index)}
+            className={`tabButton ${index === selectedTab ? "active" : ""}`}
+          >
+            {name}
+          </button>
+        ))}
+        <table className="table container">
+          <thead>
+            <tr>
+              {items[activeSheet] &&
+                items[activeSheet].length > 0 && // Check if items[activeSheet] is defined
+                Object.keys(items[activeSheet][0]).map((key, index) => (
+                  <th key={index} scope="col">
+                    {key}
+                  </th>
+                ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <button onClick={handleCalculation}>Perform Calculation</button>
-      {activeSheet === 2 && <CalculationPage result={result} />}
+          </thead>
+          <tbody>
+            {items[activeSheet]?.map((d, index) => (
+              <tr key={index}>
+                {Object.keys(items[activeSheet][0]).map((key, index) => {
+                  const cellValue = d[key] !== undefined ? d[key] : "";
+                  return (
+                    <td key={index}>
+                      {typeof cellValue === "number"
+                        ? Number.isInteger(cellValue)
+                          ? cellValue
+                          : cellValue.toFixed(2)
+                        : cellValue}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {fileUploaded && (
+          <button className="Button" onClick={handleCalculation}>
+            Формировать свод
+          </button>
+        )}
+        {activeSheet === 2 && <CalculationPage result={result} />}
+      </div>
     </div>
   );
 }
